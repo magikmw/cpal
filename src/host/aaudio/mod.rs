@@ -299,7 +299,12 @@ where
     D: FnMut(&Data, &InputCallbackInfo) + Send + 'static,
     E: FnMut(StreamError) + Send + 'static,
 {
-    let builder = configure_for_device(builder, device, config);
+    // Use the VOICE_COMMUNICATION input preset so the platform engages its
+    // built-in acoustic echo canceller / noise suppression on the capture path.
+    // Without this, captured audio includes the device's own loudspeaker output
+    // (e.g. TTS), which breaks barge-in / full-duplex voice. Input streams only.
+    let builder = configure_for_device(builder, device, config)
+        .input_preset(ndk::audio::AudioInputPreset::VoiceCommunication);
     let created = Instant::now();
     let channel_count = config.channels as i32;
     let stream = builder
